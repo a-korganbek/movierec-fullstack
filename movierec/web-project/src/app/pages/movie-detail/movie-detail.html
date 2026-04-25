@@ -1,0 +1,307 @@
+<nav class="navbar">
+  <div class="nav-left">
+    <a class="nav-link" routerLink="/">{{ t('movies') }}</a>
+    <a class="nav-link" routerLink="/watchlist">{{ t('watchlist') }}</a>
+  </div>
+  <div class="nav-right">
+    <button class="lang-btn" *ngFor="let lang of langs"
+      [class.lang-active]="currentLang === lang"
+      (click)="setLang(lang)">{{ lang }}</button>
+
+    <button class="auth-btn" *ngIf="!isLoggedIn()" routerLink="/login">Login</button>
+
+    <div class="account-dropdown-wrap" *ngIf="isLoggedIn()">
+      <button class="account-icon-btn" (click)="toggleAccountMenu()">
+        <div class="account-avatar-small">
+          <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+          <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+        </div>
+      </button>
+      <div class="account-dropdown-menu" *ngIf="showAccountMenu">
+        <div class="account-dropdown-header">
+          <div class="account-dropdown-avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+            <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+          </div>
+          <span class="account-dropdown-name">{{ getCurrentUsername() }}</span>
+        </div>
+        <div class="account-dropdown-divider"></div>
+        <a class="account-dropdown-item" routerLink="/account" (click)="closeAccountMenu()"> {{ t('account') }}</a>
+       
+        <div class="account-dropdown-divider"></div>
+        <button class="account-dropdown-item account-dropdown-logout" (click)="logout()"> {{ t('logout') }}</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="movie-hero" *ngIf="movie">
+  <div class="movie-poster">
+    <img [src]="movie.poster" [alt]="movie.title">
+  </div>
+  <div class="movie-info-col">
+    <div class="movie-info">
+      <h1>{{ getMovieTitle() }}</h1>
+      <div class="movie-meta">
+        <span *ngFor="let genre of movie.genres">{{ tGenre(genre) }}</span>
+        <span>{{ movie.year }}</span>
+        <span class="rating">⭐ {{ movie.rating }}</span>
+      </div>
+      <p class="movie-description">{{ getMovieDescription() }}</p>
+      <div class="movie-actions">
+        <button class="primary-btn" *ngIf="getMovieStatus() === 'none'" (click)="addToWatchlist()">
+          {{ t('addToWatchlist') }}
+        </button>
+        <div class="watchlist-dropdown" *ngIf="getMovieStatus() !== 'none'">
+          <button class="btn-watchlist-detail" *ngIf="getMovieStatus() === 'watchlist'" (click)="toggleWatchlistMenu()">
+            ✓ {{ t('inWatchlist') }} ▾
+          </button>
+          <button class="btn-watched-detail" *ngIf="getMovieStatus() === 'watched'" (click)="toggleWatchlistMenu()">
+            ✓ {{ t('watched') }} ▾
+          </button>
+          <div class="watchlist-menu" *ngIf="showWatchlistMenu">
+            <button class="menu-watchlist" (click)="addToWatchlist()">{{ t('inWatchlist') }}</button>
+            <button class="menu-watched" (click)="markAsWatched()">{{ t('watched') }}</button>
+            <button class="menu-remove" (click)="removeFromWatchlist()">{{ t('removeFromList') }}</button>
+          </div>
+        </div>
+        <button class="secondary-btn" (click)="scrollToTrailer()">{{ t('watchTrailer') }}</button>
+      </div>
+    </div>
+
+    <div class="inline-review">
+      <ng-container *ngIf="!hasReviewed">
+        <h3>{{ t('addReview') }}</h3>
+        <div class="review-form-inline">
+          <div class="star-rating">
+            <span *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]"
+              class="star" [class.active]="star <= newRating" (click)="setRating(star)">★</span>
+            <span class="rating-value" *ngIf="newRating > 0">{{ newRating }}/10</span>
+          </div>
+          <textarea [placeholder]="t('shareThoughts')" [(ngModel)]="newComment" rows="2"></textarea>
+          <button class="primary-btn small-btn" (click)="submitReview()">{{ t('submitReview') }}</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="hasReviewed && myReview">
+        <h3>{{ t('yourReview') }}</h3>
+        <div class="your-review-card">
+          <div class="your-review-header">
+            <div class="comment-user-info">
+              <div class="comment-avatar">
+                <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+                <span *ngIf="!getAvatarUrl()">{{ myReview.user[0].toUpperCase() }}</span>
+              </div>
+              <div>
+                <span class="username">{{ myReview.user }}</span>
+                <span class="comment-date" *ngIf="myReview.date">{{ myReview.date }}</span>
+              </div>
+            </div>
+            <span class="rating">⭐ {{ myReview.rating }}/10</span>
+          </div>
+          <p class="your-review-text">{{ myReview.comment }}</p>
+          <button class="delete-review-btn" (click)="openDeleteModal()">{{ t('deleteReview') }}</button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</section>
+
+<section class="movie-hero" *ngIf="!movie">
+  <div class="movie-info">
+    <h1>{{ t('movieNotFound') }}</h1>
+  </div>
+</section>
+
+<section class="trailer-section" #trailerSection>
+  <h2>{{ t('trailer') }}</h2>
+  <div class="trailer-box" *ngIf="movie">
+    <iframe [src]="cachedTrailerUrl" width="100%" height="100%" frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen></iframe>
+  </div>
+</section>
+
+<section class="reviews-section">
+  <div class="reviews-header">
+    <h2>{{ t('reviews') }} <span class="reviews-count-up">({{ reviews.length }})</span></h2>
+    <button class="view-all-btn" *ngIf="reviews.length > 3" (click)="toggleViewAll()">
+      {{ showAllReviews ? t('showLess') : t('viewAll') }}
+    </button>
+  </div>
+  <div *ngIf="reviews.length === 0" class="empty-state"><p>{{ t('noReviews') }}</p></div>
+  <div class="reviews-scroll" [class.expanded]="showAllReviews">
+    <div class="review-card" *ngFor="let review of displayedReviews">
+      <div class="review-header">
+        <div class="comment-user-info">
+          <div class="comment-avatar">
+            <img *ngIf="getUserAvatar(review.user)" [src]="getUserAvatar(review.user)" class="avatar-img-small" />
+            <span *ngIf="!getUserAvatar(review.user)">{{ review.user[0].toUpperCase() }}</span>
+          </div>
+          <div>
+            <span class="username">{{ review.user }}</span>
+            <span class="comment-date" *ngIf="review.date">{{ review.date }}</span>
+          </div>
+        </div>
+        <span class="rating">⭐ {{ review.rating }}/10</span>
+      </div>
+      <p>{{ review.comment }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="two-col-section">
+  <div class="left-col">
+    <h2>{{ t('discussion') }} <span class="reviews-count-down">({{ comments.length }})</span></h2>
+    <div *ngIf="comments.length === 0" class="empty-state"><p>{{ t('noComments') }}</p></div>
+
+    <div class="comments-scroll">
+      <div class="comment-card" *ngFor="let comment of comments"
+        [class.comment-card-mine]="isMyComment(comment)">
+
+        <div class="reply-indicator" *ngIf="comment.replyTo"
+          [class.reply-indicator-mine]="isMyComment(comment)">
+          ↩ {{ t('replyingTo') }} <strong>{{ comment.replyTo }}</strong>
+        </div>
+
+        <div class="comment-header" [class.comment-header-mine]="isMyComment(comment)">
+          <ng-container *ngIf="!isMyComment(comment)">
+            <div class="comment-user-info">
+              <div class="comment-avatar">
+                <img *ngIf="getUserAvatar(comment.user)" [src]="getUserAvatar(comment.user)" class="avatar-img-small" />
+                <span *ngIf="!getUserAvatar(comment.user)">{{ comment.user[0].toUpperCase() }}</span>
+              </div>
+              <div>
+                <span class="username">{{ comment.user }}</span>
+                <span class="comment-date">{{ comment.date }}</span>
+              </div>
+            </div>
+            <div class="comment-menu-wrap">
+              <button class="dots-btn" (click)="toggleCommentMenu(comment.id)">
+                <svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor">
+                  <circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="14" cy="2" r="1.5"/>
+                </svg>
+              </button>
+              <div class="comment-dropdown" *ngIf="openMenuCommentId === comment.id">
+                <button (click)="setReplyTo(comment); toggleCommentMenu(comment.id)">{{ t('reply') }}</button>
+                <button class="menu-report" (click)="openReportModal(comment.id)">{{ t('report') }}</button>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="isMyComment(comment)">
+            <div class="comment-menu-wrap">
+              <button class="dots-btn" (click)="toggleCommentMenu(comment.id)">
+                <svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor">
+                  <circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="14" cy="2" r="1.5"/>
+                </svg>
+              </button>
+              <div class="comment-dropdown comment-dropdown-mine" *ngIf="openMenuCommentId === comment.id">
+                <button (click)="startEditing(comment)">{{ t('edit') }}</button>
+                <button class="menu-remove" (click)="deleteComment(comment.id)">{{ t('remove') }}</button>
+              </div>
+            </div>
+            <div class="comment-user-info">
+              <div>
+                <span class="username mine-username">{{ comment.user }}</span>
+                <span class="comment-date">{{ comment.date }}</span>
+              </div>
+              <div class="comment-avatar">
+                <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+                <span *ngIf="!getAvatarUrl()">{{ comment.user[0].toUpperCase() }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <p class="comment-text" *ngIf="!isEditing(comment.id)"
+          [class.comment-text-mine]="isMyComment(comment)">{{ comment.text }}</p>
+
+        <div class="edit-form" *ngIf="isEditing(comment.id)">
+          <textarea [(ngModel)]="editingText" rows="2"></textarea>
+          <div class="edit-actions">
+            <button class="primary-btn small-btn" (click)="saveEdit(comment.id)">{{ t('save') }}</button>
+            <button class="secondary-btn small-btn" (click)="cancelEdit()">{{ t('cancel') }}</button>
+          </div>
+        </div>
+
+        <button class="reply-btn" *ngIf="!isEditing(comment.id)"
+          [class.reply-btn-mine]="isMyComment(comment)"
+          (click)="setReplyTo(comment)">↩ {{ t('reply') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <h2>{{ t('postComment') }}</h2>
+    <div class="comment-form">
+      <div class="reply-to-banner" *ngIf="replyingTo">
+        {{ t('replyingTo') }} <strong>{{ replyingTo.user }}</strong>
+        <button class="cancel-reply-btn" (click)="cancelReply()">✕</button>
+      </div>
+      <textarea [placeholder]="t('shareThoughts')" [(ngModel)]="newCommentText" rows="6"></textarea>
+      <button class="primary-btn" (click)="submitComment()">{{ t('post') }}</button>
+    </div>
+  </div>
+</section>
+
+<section class="similar-movies">
+  <h2>{{ t('similarMovies') }}</h2>
+  <div class="movie-grid">
+    <div class="movie-card" *ngFor="let m of similarMovies"
+      [routerLink]="['/movie', m.id]" (click)="navigateToMovie(m.id)">
+      <img [src]="m.poster" [alt]="m.title">
+      <h4>{{ getSimilarMovieTitle(m) }}</h4>
+    </div>
+  </div>
+</section>
+
+<!-- Delete Review Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+    <div class="modal-icon">🗑</div>
+    <p class="modal-text">{{ t('deleteConfirm') }}</p>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" (click)="closeDeleteModal()">{{ t('noCancel') }}</button>
+      <button class="modal-confirm-btn" (click)="confirmDeleteReview()">{{ t('yesDelete') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal-overlay" *ngIf="showReportModal" (click)="closeReportModal()">
+  <div class="modal-box report-modal-box" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeReportModal()">✕</button>
+    <ng-container *ngIf="!reportSent">
+      <div class="modal-icon">🚩</div>
+      <p class="modal-text">{{ t('reportWhy') }}</p>
+      <div class="report-reasons">
+        <button *ngFor="let reason of reportReasons"
+          class="report-reason-btn"
+          [class.selected]="selectedReason === reason.key"
+          (click)="selectReason(reason.key)">
+          <span class="reason-icon">
+            <span *ngIf="reason.key === 'harassment'">🚫</span>
+            <span *ngIf="reason.key === 'spam'">📢</span>
+            <span *ngIf="reason.key === 'misinformation'">❌</span>
+            <span *ngIf="reason.key === 'other'">•••</span>
+          </span>
+          {{ t(reason.key) }}
+        </button>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="modal-cancel-btn" (click)="closeReportModal()">{{ t('cancel') }}</button>
+        <button class="modal-confirm-btn report-submit-btn"
+          [disabled]="!selectedReason" (click)="submitReport()">{{ t('report') }}</button>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="reportSent">
+      <div class="modal-icon">✅</div>
+      <p class="modal-text">{{ t('reportSuccess') }}</p>
+      <div class="modal-actions">
+        <button class="primary-btn" (click)="closeReportModal()">{{ t('close') }}</button>
+      </div>
+    </ng-container>
+  </div>
+</div>

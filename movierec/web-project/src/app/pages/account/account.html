@@ -1,0 +1,77 @@
+<nav class="navbar">
+  <div class="nav-left">
+    <a class="nav-link" routerLink="/">{{ t('movies') }}</a>
+    <a class="nav-link" routerLink="/watchlist">{{ t('watchlist') }}</a>
+  </div>
+  <div class="nav-right">
+    <button class="lang-btn" *ngFor="let lang of langs"
+      [class.lang-active]="currentLang === lang"
+      (click)="setLang(lang)">{{ lang }}</button>
+
+    <div class="account-dropdown-wrap">
+      <button class="account-icon-btn" (click)="toggleAccountMenu()">
+        <div class="account-avatar-small">
+          <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+          <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+        </div>
+      </button>
+      <div class="account-dropdown-menu" *ngIf="showAccountMenu">
+        <div class="account-dropdown-header">
+          <div class="account-dropdown-avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+            <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+          </div>
+          <span class="account-dropdown-name">{{ getCurrentUsername() }}</span>
+        </div>
+        <div class="account-dropdown-divider"></div>
+        <a class="account-dropdown-item" routerLink="/account" (click)="closeAccountMenu()"> {{ t('account') }}</a>
+       
+        <div class="account-dropdown-divider"></div>
+        <button class="account-dropdown-item account-dropdown-logout" (click)="logout()"> {{ t('logout') }}</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="account-section">
+  <div class="account-container">
+
+    <!-- Avatar -->
+    <div class="avatar-block">
+      <div class="avatar-circle">
+        <img *ngIf="avatarUrl" [src]="avatarUrl" alt="avatar" class="avatar-img" />
+        <span *ngIf="!avatarUrl" class="avatar-letter">{{ getAvatarLetter() }}</span>
+      </div>
+      <h2 class="account-username">{{ username }}</h2>
+      <label class="upload-btn" for="avatar-upload">{{ t('changePhoto') }}</label>
+      <input id="avatar-upload" type="file" accept="image/*"
+        style="display:none" (change)="onFileSelected($event)">
+    </div>
+
+    <!-- Form -->
+    <div class="account-form">
+      <h3>{{ t('editProfile') }}</h3>
+
+      <div class="success-msg" *ngIf="successMessage"> {{ successMessage }}</div>
+      <div class="error-msg" *ngIf="errorMessage"> {{ errorMessage }}</div>
+
+      <div class="form-group">
+        <label>{{ t('newUsername') }}</label>
+        <input type="text" [(ngModel)]="newUsername" [placeholder]="username" />
+      </div>
+
+      <div class="form-group">
+        <label>{{ t('newPassword') }}</label>
+        <input type="password" [(ngModel)]="newPassword" [placeholder]="t('enterNewPassword')" />
+      </div>
+
+      <div class="form-group">
+        <label>{{ t('confirmPassword') }}</label>
+        <input type="password" [(ngModel)]="confirmPassword" [placeholder]="t('confirmNewPassword')" />
+      </div>
+
+      <button class="primary-btn save-btn" (click)="saveChanges()">{{ t('saveChanges') }}</button>
+    </div>
+
+  </div>
+</section>

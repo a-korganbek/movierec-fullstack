@@ -1,0 +1,100 @@
+<nav class="navbar">
+  <div class="nav-left">
+    <a class="nav-link" routerLink="/">{{ t('movies') }}</a>
+    <a class="nav-link" routerLink="/watchlist">{{ t('watchlist') }}</a>
+  </div>
+  <div class="nav-right">
+    <button class="lang-btn" *ngFor="let lang of langs"
+      [class.lang-active]="currentLang === lang"
+      (click)="setLang(lang)">{{ lang }}</button>
+
+    <button class="auth-btn" *ngIf="!isLoggedIn()" routerLink="/login">{{ t('login') }}</button>
+
+    <div class="account-dropdown-wrap" *ngIf="isLoggedIn()">
+      <button class="account-icon-btn" (click)="toggleAccountMenu()">
+        <div class="account-avatar-small">
+          <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+          <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+        </div>
+      </button>
+      <div class="account-dropdown-menu" *ngIf="showAccountMenu">
+        <div class="account-dropdown-header">
+          <div class="account-dropdown-avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+            <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+          </div>
+          <span class="account-dropdown-name">{{ getCurrentUsername() }}</span>
+        </div>
+        <div class="account-dropdown-divider"></div>
+        <a class="account-dropdown-item" routerLink="/account" (click)="closeAccountMenu()"> {{ t('account') }}</a>
+        
+        <div class="account-dropdown-divider"></div>
+        <button class="account-dropdown-item account-dropdown-logout" (click)="logout()"> {{ t('logout') }}</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="watchlist-section">
+
+  <!-- Tabs -->
+  <div class="tabs-wrap">
+    <button class="tab-btn" [class.tab-active]="activeTab === 'saved'" (click)="setTab('saved')">
+      {{ t('savedMovies') }}
+      <span class="tab-count">{{ watchlistMovies.length }}</span>
+    </button>
+    <button class="tab-btn" [class.tab-active]="activeTab === 'watched'" (click)="setTab('watched')">
+      {{ t('watchedMovies') }}
+      <span class="tab-count">{{ watchedMovies.length }}</span>
+    </button>
+  </div>
+
+  <!-- Saved Movies -->
+  <ng-container *ngIf="activeTab === 'saved'">
+    <div class="movie-grid" *ngIf="watchlistMovies.length > 0">
+      <div class="movie-card" *ngFor="let movie of watchlistMovies">
+        <img [src]="movie.poster" [alt]="movie.title" />
+        <div class="movie-info">
+          <h3>{{ getMovieTitle(movie) }}</h3>
+          <p>{{ movie.genres.join(', ') }} • {{ movie.year }}</p>
+          <span class="rating">⭐ {{ movie.rating }}</span>
+          <div class="movie-actions">
+            <button class="primary-btn small-btn" [routerLink]="['/movie', movie.id]">{{ t('open') }}</button>
+            <button class="danger-btn small-btn" (click)="removeMovie(movie.id)">{{ t('remove') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="empty-box" *ngIf="watchlistMovies.length === 0">
+      <div class="empty-icon">🎬</div>
+      <h2>{{ t('emptyWatchlist') }}</h2>
+      <p>{{ t('emptyWatchlistText') }}</p>
+      <button class="primary-btn" routerLink="/">{{ t('browseMovies') }}</button>
+    </div>
+  </ng-container>
+
+  <!-- Watched Movies -->
+  <ng-container *ngIf="activeTab === 'watched'">
+    <div class="movie-grid" *ngIf="watchedMovies.length > 0">
+      <div class="movie-card" *ngFor="let movie of watchedMovies">
+        <img [src]="movie.poster" [alt]="movie.title" />
+        <div class="movie-info">
+          <h3>{{ getMovieTitle(movie) }}</h3>
+          <p>{{ movie.genres.join(', ') }} • {{ movie.year }}</p>
+          <span class="rating">⭐ {{ movie.rating }}</span>
+          <div class="movie-actions">
+            <button class="primary-btn small-btn" [routerLink]="['/movie', movie.id]">{{ t('open') }}</button>
+            <button class="danger-btn small-btn" (click)="removeMovie(movie.id)">{{ t('remove') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="empty-box" *ngIf="watchedMovies.length === 0">
+      <div class="empty-icon">👁</div>
+      <h2>{{ t('emptyWatched') }}</h2>
+      <p>{{ t('emptyWatchedText') }}</p>
+      <button class="primary-btn" routerLink="/">{{ t('browseMovies') }}</button>
+    </div>
+  </ng-container>
+
+</section>

@@ -1,0 +1,111 @@
+<section class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+
+      <div class="login-switch">
+        <button
+          type="button"
+          [class.active]="!isRegisterMode"
+          (click)="switchToLogin()"
+          [disabled]="isLoading"
+        >
+          Login
+        </button>
+
+        <button
+          type="button"
+          [class.active]="isRegisterMode"
+          (click)="switchToRegister()"
+          [disabled]="isLoading"
+        >
+          Register
+        </button>
+      </div>
+
+      <div *ngIf="!isRegisterMode">
+        <form (ngSubmit)="login()" class="auth-form">
+          <h2>Welcome back</h2>
+
+          <input
+            type="text"
+            placeholder="Username or Email"
+            [(ngModel)]="identifier"
+            name="identifier"
+            [disabled]="isLoading"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            [(ngModel)]="password"
+            name="loginPassword"
+            [disabled]="isLoading"
+          />
+
+          <p class="success-text" *ngIf="successMessage">
+            {{ successMessage }}
+          </p>
+
+          <p class="error-text" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </p>
+
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="isLoading"
+          >
+            {{ isLoading ? 'Loading...' : 'Login' }}
+          </button>
+        </form>
+      </div>
+
+      <div *ngIf="isRegisterMode">
+        <form (ngSubmit)="register()" class="auth-form">
+          <h2>Create account</h2>
+
+          <input
+            type="text"
+            placeholder="Username"
+            [(ngModel)]="username"
+            name="username"
+            [disabled]="isLoading"
+          />
+
+          <input
+            type="email"
+            placeholder="Email"
+            [(ngModel)]="email"
+            name="email"
+            [disabled]="isLoading"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            [(ngModel)]="password"
+            name="registerPassword"
+            [disabled]="isLoading"
+          />
+
+          <p class="success-text" *ngIf="successMessage">
+            {{ successMessage }}
+          </p>
+
+          <p class="error-text" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </p>
+
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="isLoading"
+          >
+            {{ isLoading ? 'Creating...' : 'Create account' }}
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>

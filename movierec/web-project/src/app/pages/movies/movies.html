@@ -1,0 +1,145 @@
+<nav class="navbar">
+  <div class="nav-left">
+    <a class="nav-link" routerLink="/" (click)="resetFilters()">{{ t('movies') }}</a>
+    <a class="nav-link" routerLink="/watchlist">{{ t('watchlist') }}</a>
+  </div>
+
+  <div class="nav-right">
+    <button class="lang-btn" *ngFor="let lang of langs"
+      [class.lang-active]="currentLang === lang" (click)="setLang(lang)">
+      {{ lang }}
+    </button>
+
+    <button class="auth-btn" *ngIf="!isLoggedIn()" routerLink="/login">
+      {{ t('login') }}
+    </button>
+
+    <div class="account-dropdown-wrap" *ngIf="isLoggedIn()">
+      <button class="account-icon-btn" (click)="toggleAccountMenu()">
+        <div class="account-avatar-small">
+          <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+          <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+        </div>
+      </button>
+      <div class="account-dropdown-menu" *ngIf="showAccountMenu">
+        <div class="account-dropdown-header">
+          <div class="account-dropdown-avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" class="avatar-img-small" />
+            <span *ngIf="!getAvatarUrl()">{{ getAvatarLetter() }}</span>
+          </div>
+          <span class="account-dropdown-name">{{ getCurrentUsername() }}</span>
+        </div>
+        <div class="account-dropdown-divider"></div>
+        <a class="account-dropdown-item" routerLink="/account" (click)="closeAccountMenu()">
+   {{ t('account') }}
+</a>
+
+        <div class="account-dropdown-divider"></div>
+        <button class="account-dropdown-item account-dropdown-logout" (click)="logout()">
+           {{ t('logout') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="search-hero">
+  <div class="search-hero-box">
+    <h1 class="search-title">{{ t('searchTitle') }}</h1>
+    <div class="search-filter-wrap" (mouseenter)="openFilterHover()" (mouseleave)="closeFilterHover()">
+      <div class="search-main">
+        <input type="text" [placeholder]="t('searchPlaceholder')" [(ngModel)]="searchTerm"
+          (focus)="pinFilter()" (click)="pinFilter()" (keyup.enter)="onSearchEnter()" />
+      </div>
+      <div class="filter-panel" *ngIf="isFilterOpen" (click)="$event.stopPropagation()">
+        <div class="filter-header"><h3>{{ t('filters') }}</h3></div>
+        <div class="filter-block">
+          <p class="filter-label">{{ t('genres') }}</p>
+          <div class="genre-grid">
+            <label class="genre-item" *ngFor="let genre of allGenres">
+              <input type="checkbox" [checked]="isGenreSelected(genre)"
+                (change)="toggleGenre(genre, $any($event.target).checked)" />
+              <span>{{ tGenre(genre) }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="filter-block">
+          <p class="filter-label">{{ t('minRating') }}: {{ getRatingLabel(selectedMinRating) }}</p>
+          <input type="range" min="1" max="10" step="1" [(ngModel)]="selectedMinRating" class="rating-range" />
+          <div class="range-labels">
+            <span>1+</span><span>2+</span><span>3+</span><span>4+</span><span>5+</span>
+            <span>6+</span><span>7+</span><span>8+</span><span>9+</span><span>10</span>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="primary-btn small-btn" (click)="applyFilters()">{{ t('apply') }}</button>
+          <button class="secondary-btn small-btn" (click)="resetFilters()">{{ t('reset') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="recommended-section" *ngIf="!hasAppliedFilters && recommendedMovies.length > 0">
+  <div class="section-header">
+    <h2>{{ t('recommendations') }}</h2>
+    <span class="section-subtext">{{ t('ratingAbove9') }}</span>
+  </div>
+  <div class="movie-grid">
+    <div class="movie-card" *ngFor="let movie of recommendedMovies">
+      <img [src]="movie.poster" [alt]="movie.title" />
+      <div class="movie-info">
+        <h3>{{ getMovieTitle(movie) }}</h3>
+        <p>{{ movie.genres.map(tGenre.bind(this)).join(', ') }} • {{ movie.year }}</p>
+        <span class="rating">⭐ {{ movie.rating }}</span>
+        <div class="movie-actions">
+          <button class="primary-btn small-btn" [routerLink]="['/movie', movie.id]">{{ t('open') }}</button>
+          <div class="watchlist-dropdown">
+            <button class="btn-add small-btn" *ngIf="getMovieStatus(movie.id) === 'none'" (click)="setWatchlist(movie.id)">{{ t('addToWatchlist') }}</button>
+            <button class="btn-watchlist small-btn" *ngIf="getMovieStatus(movie.id) === 'watchlist'" (click)="toggleMovieMenu(movie.id)">{{ t('inWatchlist') }}</button>
+            <button class="btn-watched small-btn" *ngIf="getMovieStatus(movie.id) === 'watched'" (click)="toggleMovieMenu(movie.id)">{{ t('watched') }}</button>
+            <div class="watchlist-menu" *ngIf="openMenuMovieId === movie.id">
+              <button class="menu-watchlist" (click)="setWatchlist(movie.id)">{{ t('inWatchlist') }}</button>
+              <button class="menu-watched" (click)="setWatched(movie.id)">{{ t('watched') }}</button>
+              <button class="menu-remove" (click)="removeFromList(movie.id)">{{ t('removeFromList') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="all-movies-section" *ngIf="hasAppliedFilters">
+  <div class="section-header">
+    <h2>{{ t('searchResults') }}</h2>
+    <span class="section-subtext">{{ filteredMovies.length }} {{ t('movies_count') }}</span>
+  </div>
+  <div class="movie-grid" *ngIf="filteredMovies.length > 0">
+    <div class="movie-card" *ngFor="let movie of filteredMovies">
+      <img [src]="movie.poster" [alt]="movie.title" />
+      <div class="movie-info">
+        <h3>{{ getMovieTitle(movie) }}</h3>
+        <p>{{ movie.genres.map(tGenre.bind(this)).join(', ') }} • {{ movie.year }}</p>
+        <span class="rating">⭐ {{ movie.rating }}</span>
+        <div class="movie-actions">
+          <button class="primary-btn small-btn" [routerLink]="['/movie', movie.id]">{{ t('open') }}</button>
+          <div class="watchlist-dropdown">
+            <button class="btn-add small-btn" *ngIf="getMovieStatus(movie.id) === 'none'" (click)="setWatchlist(movie.id)">{{ t('addToWatchlist') }}</button>
+            <button class="btn-watchlist small-btn" *ngIf="getMovieStatus(movie.id) === 'watchlist'" (click)="toggleMovieMenu(movie.id)">{{ t('inWatchlist') }}</button>
+            <button class="btn-watched small-btn" *ngIf="getMovieStatus(movie.id) === 'watched'" (click)="toggleMovieMenu(movie.id)">{{ t('watched') }}</button>
+            <div class="watchlist-menu" *ngIf="openMenuMovieId === movie.id">
+              <button class="menu-watchlist" (click)="setWatchlist(movie.id)">{{ t('inWatchlist') }}</button>
+              <button class="menu-watched" (click)="setWatched(movie.id)">{{ t('watched') }}</button>
+              <button class="menu-remove" (click)="removeFromList(movie.id)">{{ t('removeFromList') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="empty-search" *ngIf="filteredMovies.length === 0">
+    <h3>{{ t('noMovies') }}</h3>
+    <p>{{ t('noMoviesHint') }}</p>
+  </div>
+</section>
